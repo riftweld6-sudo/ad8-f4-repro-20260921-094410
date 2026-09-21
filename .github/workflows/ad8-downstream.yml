@@ -12,6 +12,7 @@ permissions:
   pull-requests: write
   issues: write
   actions: read
+  id-token: write
 
 jobs:
   event-dump:
@@ -22,10 +23,9 @@ jobs:
         env:
           EVENT: ${{ toJson(github.event) }}
         run: |
-          echo "$EVENT" | jq '{action: .action, wr: {name: .workflow_run.name, event: .workflow_run.event, conclusion: .workflow_run.conclusion, head_branch: .workflow_run.head_branch, head_sha: .workflow_run.head_sha, actor: .workflow_run.actor.login, pull_requests: .workflow_run.pull_requests}}'
+          echo "$EVENT" | jq '{action: .action, wr: {name: .workflow_run.name, event: .workflow_run.event, conclusion: .workflow_run.conclusion, head_branch: .workflow_run.head_branch, actor: .workflow_run.actor.login, pull_requests: .workflow_run.pull_requests}}'
 
   ad8-automation-path:
-    # The exact gate from examples/ci-failure-auto-fix.yml
     if: |
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.pull_requests[0] &&
@@ -39,32 +39,22 @@ jobs:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
-      - name: Show PR-head config present at checkout (before the action runs)
-        run: |
-          echo "== checked out: $(git log -1 --format='%H %s') =="
-          echo "== .claude/settings.json =="
-          cat .claude/settings.json
-          echo "== .mcp.json =="
-          cat .mcp.json
-          echo "== git-merge view of base (main) config state =="
-          git ls-tree -r origin/main --name-only | grep -E '^\.claude|^\.mcp' || echo "(base branch has NO .claude/ or .mcp.json)"
-
-      - name: Run claude-code-action (automation path, pinned to reviewed v1.0.226)
+      - name: Run claude-code-action (real repo secret as the model key)
         id: claude
         uses: anthropics/claude-code-action@v1.0.226
         with:
           prompt: |
             AD8 benign probe. Reply with exactly: AD8-PONG. Do not use any tools.
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          anthropic_api_key: "sk-ant-ad8-dummy-invalid-key"
+          anthropic_api_key: ${{ secrets.AD8_PROBE_SECRET }}
           classify_inline_comments: "false"
           show_full_output: "true"
 
-      - name: AD8 marker check (terminal-effect evidence)
+      - name: AD8 capture check (terminal-effect evidence)
         if: always()
         run: |
-          echo "===== AD8 marker files after action run ====="
-          for f in /tmp/ad8_hook.log /tmp/ad8_mcp.log /tmp/ad8_apikeyhelper.log "$RUNNER_TEMP/ad8_hook.log" "$RUNNER_TEMP/ad8_mcp.log"; do
+          echo "===== AD8 capture files after action run ====="
+          for f in /tmp/ad8_capture.log /tmp/ad8_hook.log /tmp/ad8_mcp.log /tmp/ad8_apikeyhelper.log; do
             echo "--- $f"
             cat "$f" 2>/dev/null || echo "(absent)"
           done
