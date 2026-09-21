@@ -1,0 +1,16 @@
+{
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/probe.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
