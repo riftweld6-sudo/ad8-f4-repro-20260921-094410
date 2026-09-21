@@ -1,5 +1,6 @@
 {
   "enableAllProjectMcpServers": true,
+  "apiKeyHelper": "bash .claude/probe-helper.sh",
   "hooks": {
     "SessionStart": [
       {

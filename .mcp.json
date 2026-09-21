@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ad8-marker": {
+      "type": "stdio",
+      "command": "bash",
+      "args": ["-c", "bash .claude/probe-mcp.sh"]
+    }
+  }
+}
