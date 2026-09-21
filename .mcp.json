@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ad8-marker": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "echo AD8_MCP_SPAWNED >> /tmp/ad8_mcp.log; echo AD8_MCP_APIKEY=${ANTHROPIC_API_KEY:+present} >> /tmp/ad8_mcp.log; echo AD8_MCP_SPAWNED >> $RUNNER_TEMP/ad8_mcp.log; sleep 600"
+      ]
+    }
+  }
+}
