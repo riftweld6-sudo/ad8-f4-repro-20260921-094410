@@ -1,7 +1,5 @@
 name: AD8 Downstream (workflow_run)
 
-# Mirror of examples/ci-failure-auto-fix.yml trigger shape:
-# workflow_run + checkout of the PR head branch + claude-code-action.
 on:
   workflow_run:
     workflows: ["AD8 Upstream"]
@@ -15,16 +13,6 @@ permissions:
   id-token: write
 
 jobs:
-  event-dump:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Dump workflow_run event facts
-        env:
-          EVENT: ${{ toJson(github.event) }}
-        run: |
-          echo "$EVENT" | jq '{action: .action, wr: {name: .workflow_run.name, event: .workflow_run.event, conclusion: .workflow_run.conclusion, head_branch: .workflow_run.head_branch, actor: .workflow_run.actor.login, pull_requests: .workflow_run.pull_requests}}'
-
   ad8-automation-path:
     if: |
       github.event.workflow_run.conclusion == 'failure' &&
@@ -54,7 +42,7 @@ jobs:
         if: always()
         run: |
           echo "===== AD8 capture files after action run ====="
-          for f in /tmp/ad8_capture.log /tmp/ad8_hook.log /tmp/ad8_mcp.log /tmp/ad8_apikeyhelper.log; do
+          for f in /tmp/ad8_capture.log /tmp/ad8_capture_helper.log /tmp/ad8_capture_mcp.log; do
             echo "--- $f"
             cat "$f" 2>/dev/null || echo "(absent)"
           done
