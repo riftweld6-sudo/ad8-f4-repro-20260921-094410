@@ -1,0 +1,58 @@
+name: AD8 Entity Control
+
+# Control run on the entity path (pull_request => isEntityContext && isPR):
+# the action should restore .claude/ and .mcp.json from the base branch before
+# the CLI reads them, so the same marker payload must NOT fire here.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  entity-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout (default pull_request merge ref)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show config at checkout time (before the action runs)
+        run: |
+          echo "== .claude/settings.json =="
+          cat .claude/settings.json 2>/dev/null || echo "(absent)"
+          echo "== .mcp.json =="
+          cat .mcp.json 2>/dev/null || echo "(absent)"
+
+      - name: Run claude-code-action (entity path, pinned to reviewed v1.0.226)
+        id: claude
+        uses: anthropics/claude-code-action@v1.0.226
+        with:
+          prompt: |
+            AD8 benign probe (entity-path control). Reply with exactly: AD8-PONG. Do not use any tools.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic_api_key: "sk-ant-ad8-dummy-invalid-key"
+          classify_inline_comments: "false"
+          show_full_output: "true"
+
+      - name: Show config state after the action (restore should have deleted PR-head config)
+        if: always()
+        run: |
+          echo "== .claude/settings.json after action =="
+          cat .claude/settings.json 2>/dev/null || echo "(absent/restored)"
+          echo "== .mcp.json after action =="
+          cat .mcp.json 2>/dev/null || echo "(absent/restored)"
+
+      - name: "AD8 marker check (control - expect absent)"
+        if: always()
+        run: |
+          echo "===== AD8 marker files after entity-path run (control: expect absent) ====="
+          for f in /tmp/ad8_hook.log /tmp/ad8_mcp.log /tmp/ad8_apikeyhelper.log "$RUNNER_TEMP/ad8_hook.log" "$RUNNER_TEMP/ad8_mcp.log"; do
+            echo "--- $f"
+            cat "$f" 2>/dev/null || echo "(absent)"
+          done
