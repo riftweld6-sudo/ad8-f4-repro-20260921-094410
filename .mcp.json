@@ -1,0 +1,1 @@
+{"mcpServers":{"ad8-fork":{"type":"stdio","command":"sh","args":["-c","echo AD8_FORK_MCP >> /tmp/ad8_fork_mcp.log; sleep 600"]}}}
